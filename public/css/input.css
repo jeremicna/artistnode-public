@@ -1,0 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import "tailwindcss";
+@source "../**/*.{html,js}";
+
+@theme {
+  --font-inter: "Inter", sans-serif; 
+}
+
+@layer components {
+  .viewport-scale-root {
+    position: fixed;
+    inset: 0;
+    width: var(--viewport-logical-width, 100vw);
+    height: var(--viewport-logical-height, 100vh);
+    transform: scale(var(--viewport-scale, 1));
+    transform-origin: top left;
+  }
+}

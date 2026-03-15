@@ -1,0 +1,82 @@
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-94SMXGZ575"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-94SMXGZ575');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>artistnode.fun</title>
+    <link rel="stylesheet" href="css/output.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.remove('opacity-0');
+        });
+    </script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="js/index.js" type="module"></script>
+    <script src="js/glow.js" type="module"></script>
+</head>
+<body class="fixed h-full overflow-hidden font-inter m-0 opacity-0 transition-opacity duration-300">
+    <div id="viewportScaleRoot" class="viewport-scale-root">
+    <div id="overlay" class="absolute flex flex-col justify-center top-0 left-0 w-full h-full bg-slate-950/80 backdrop-blur-sm z-20">
+        <div class="absolute top-6 left-6 z-50 text-white font-inter select-none">
+            <div class="text-xl font-semibold tracking-wide">artistnode</div>
+            <div class="text-sm font-light text-white/70 max-w-xs mt-1">A fun way to find new music</div>
+        </div>
+        <div class="absolute bottom-6 left-0 right-0 z-20 text-white/70 font-inter select-none">
+            <div class="flex flex-col items-center text-center space-y-1">
+                <div class="text-xs font-light max-w-xs tracking-wide">200k+ artists &bull; 2m+ recommendations</div>
+                <div class="text-xs font-light max-w-xs mt-2 opacity-60">Full functionality is available on desktop. Mobile users may encounter a simplified experience.</div>
+                <a href="/artistle" class="inline-block mt-4 px-4 py-2 text-xs font-medium max-w-xs text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full backdrop-blur-md transition-all">Play the daily Artistle</a>
+            </div>
+        </div>
+        <div id="overlay-glow-bg" class="w-full h-full pointer-events-none absolute inset-0 z-20 bg-blend-screen"></div>
+        <div id="container" class="flex flex-col items-center mx-auto z-20 space-y-8 -mt-20 px-4 max-w-4xl opacity-0 translate-y-8 transition-all duration-700 ease-out">
+            <div class="text-5xl xl:text-6xl 2xl:text-7xl font-inter font-medium tracking-tight text-white drop-shadow-lg text-center leading-tight">Who's your<br>favorite artist?</div>
+            <div class="relative w-full max-w-lg">
+                <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Search artist" class="w-full h-14 lg:h-16 px-6 text-lg xl:text-xl font-inter font-light rounded-2xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 focus:ring-2 focus:ring-white/10 z-30 shadow-2xl backdrop-blur-xl transition-all"/>
+                <div id="searchEnter" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs tracking-wider font-medium bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg text-white/70 hidden select-none backdrop-blur-md shadow-sm">enter</div>
+                
+                <div id="searchResults" class="absolute left-0 top-full mt-3 w-full backdrop-blur-2xl bg-slate-900/60 border border-white/10 text-white/90 shadow-2xl rounded-2xl hidden z-30 overflow-hidden">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="canvas" class="bg-slate-950 relative z-[-10]">
+        <div id="glow-bg" class="w-full h-full pointer-events-none absolute inset-0 z-[-10] bg-blend-screen"></div>
+        <svg id="forceDirectedGraph"></svg>
+        <div class="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-lg text-xs text-white/70 font-inter pointer-events-none">Click on nodes to expand related artists. Click again to collapse.</div>
+        
+        <div id="tooltip" class="absolute top-6 left-6 w-[320px] h-[300px] aspect-square border border-white/10 shadow-2xl rounded-2xl hidden overflow-hidden backdrop-blur-2xl">
+            <div id="tooltipBackground" class="absolute inset-0 bg-slate-900/50 bg-cover bg-center"></div>
+            <div class="relative h-full p-6 space-y-4">
+                <div class="absolute top-5 right-5">
+                    <a id="artistlink" href="#" target="_blank" rel="noopener noreferrer" class="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full inline-flex transition-all">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-white/70 hover:text-green-400 cursor-pointer transition-colors">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="m14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+                <div id="infoHeader" class="pr-10">
+                    <div id="artistName" class="text-xl sm:text-2xl md:text-3xl font-inter font-medium tracking-tight text-white truncate drop-shadow-md">Artist</div>
+                    <div id="genres" class="text-xs sm:text-sm font-inter font-light tracking-wide text-white/60 mt-1">Genres:</div>
+                </div>
+                <div class="pt-2 border-t border-white/10">
+                    <div id="topTracksLabel">
+                        <div class="text-sm sm:text-base font-inter font-medium tracking-wide text-white/80">Top Tracks</div>
+                    </div>
+                    <div id="topTracksContainer" class="mt-2 space-y-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

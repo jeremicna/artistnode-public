@@ -1,0 +1,133 @@
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-94SMXGZ575"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-94SMXGZ575');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>artistnode - Artistle</title>
+    <link rel="stylesheet" href="css/output.css">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.remove('opacity-0');
+        });
+    </script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="js/artistle.js" type="module"></script>
+    <script src="js/glow.js" type="module"></script>
+</head>
+<body class="fixed h-full overflow-hidden font-inter m-0 opacity-0 transition-opacity duration-300">
+    <div id="viewportScaleRoot" class="viewport-scale-root">
+    <div id="overlay" class="absolute flex flex-col justify-center top-0 left-0 w-full h-full bg-slate-950/80 backdrop-blur-sm z-20">
+        <div class="absolute top-6 left-6 z-50 text-white font-inter select-none">
+            <div class="text-xl font-semibold tracking-wide">artistnode</div>
+            <div class="text-sm font-light text-white/70 max-w-xs mt-1">Artistle</div>
+        </div>
+        <div class="absolute bottom-6 left-0 right-0 z-20 text-white/70 font-inter select-none">
+            <div class="flex flex-col items-center text-center">
+                <div class="text-sm font-light max-w-xs">Pick a starting artist to begin the puzzle.</div>
+                <a href="/" class="inline-block mt-4 px-4 py-2 text-xs font-medium max-w-xs text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full backdrop-blur-md transition-all">Back to graph explorer</a>
+            </div>
+        </div>
+        <div id="overlay-glow-bg" class="w-full h-full pointer-events-none absolute inset-0 z-20 bg-blend-screen"></div>
+        <div id="container" class="flex flex-col items-center mx-auto z-20 space-y-8 -mt-20 px-4 max-w-4xl opacity-0 translate-y-8 transition-all duration-700 ease-out">
+            <div class="text-5xl xl:text-6xl 2xl:text-7xl font-inter font-medium tracking-tight text-white drop-shadow-lg text-center">Start the path</div>
+            <div class="relative w-full max-w-lg">
+                <input id="searchInput" type="text" autocomplete="off" spellcheck="false" placeholder="Search artist" class="w-full h-14 lg:h-16 px-6 text-lg xl:text-xl font-inter font-light rounded-2xl border border-white/10 bg-white/5 text-white placeholder-white/40 focus:outline-none focus:bg-white/10 focus:border-white/30 focus:ring-2 focus:ring-white/10 z-30 shadow-2xl backdrop-blur-xl transition-all"/>
+                <div id="searchEnter" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-xs tracking-wider font-medium bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg text-white/70 hidden select-none backdrop-blur-md shadow-sm">enter</div>
+                
+                <div id="searchResults" class="absolute left-0 top-full mt-3 w-full backdrop-blur-2xl bg-slate-900/60 border border-white/10 text-white/90 shadow-2xl rounded-2xl hidden z-30 overflow-hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="winOverlay" class="absolute hidden flex-col justify-center items-center top-0 left-0 w-full h-full bg-slate-950/80 backdrop-blur-sm z-40 px-4 text-center">
+        <div class="w-full max-w-[360px] bg-slate-900/50 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl p-6">
+            <div class="text-2xl sm:text-3xl font-inter font-medium tracking-tight text-white drop-shadow-md">Artistle</div>
+            <div id="winMessage" class="mt-3 text-sm font-inter font-light text-white/70">---</div>
+            <div id="winPathSummary" class="mt-4 hidden text-left">
+                <div class="text-xs font-inter font-medium tracking-widest text-white/40">Path</div>
+                <div id="winPathSummaryText" class="mt-2 text-sm font-inter font-light leading-6 text-white/80 break-words">---</div>
+            </div>
+            <button id="winOverlayButton" type="button" class="mt-6 inline-block px-4 py-2 text-xs font-medium text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full backdrop-blur-md transition-all">
+                Play again
+            </button>
+        </div>
+    </div>
+    
+    <div id="canvas" class="bg-slate-950 relative z-[-10]">
+        <div id="glow-bg" class="w-full h-full pointer-events-none absolute inset-0 z-[-10] bg-blend-screen"></div>
+        <svg id="forceDirectedGraph"></svg>
+        <div class="absolute top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-lg text-xs text-white/70 font-inter pointer-events-none">Click on nodes to expand related artists. Click again to collapse.</div>
+        
+        <div id="gamePanel" class="absolute top-6 right-6 z-30 w-full max-w-[360px] max-[900px]:left-4 max-[900px]:right-4 max-[900px]:max-w-[calc(100%-32px)] max-[820px]:top-auto max-[820px]:bottom-4 bg-slate-900/50 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl p-6">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <div class="text-2xl sm:text-3xl font-inter font-medium tracking-tight text-white drop-shadow-md">Artistle</div>
+                    <div class="mt-1 text-sm font-inter font-light text-white/60">Expand nodes to reach the target artist.</div>
+                </div>
+            </div>
+            <div class="mt-5 flex flex-wrap gap-2">
+                <div id="puzzleDate" class="text-xs font-inter font-medium tracking-wide text-white/80 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">Puzzle</div>
+                <div id="guessesRemaining" class="text-xs font-inter font-medium tracking-wide text-white/80 px-3 py-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-md"></div>
+            </div>
+            
+            <div class="mt-6 p-4 rounded-xl bg-white/5 border border-white/5">
+                <div class="text-xs font-inter font-medium tracking-widest text-white/40">Target</div>
+                <div id="targetName" class="mt-1 text-lg sm:text-xl font-inter font-medium tracking-tight text-white drop-shadow-sm">---</div>
+                <div id="targetGenre" class="mt-1 text-xs font-inter font-light tracking-wide text-white/60">Genre: ---</div>
+            </div>
+            <div hidden aria-hidden="true">
+                <div id="rootName">---</div>
+                <div id="rootGenre">Genre: ---</div>
+            </div>
+            
+            <div id="board" class="mt-4 flex items-center gap-1.5"></div>
+            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs font-inter font-medium tracking-wide text-white/60">
+                <div class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-sm border border-[#6aaa64] bg-[#6aaa64]"></span>
+                    <span>Closer</span>
+                </div>
+                <div class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-sm border border-[#c9b458] bg-[#c9b458]"></span>
+                    <span>No change</span>
+                </div>
+                <div class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-sm border border-[#787c7e] bg-[#787c7e]"></span>
+                    <span>Farther</span>
+                </div>
+            </div>
+            <div id="status" class="mt-4 text-sm font-inter font-medium text-white/70 text-center min-h-[20px]"></div>
+        </div>
+
+        <div id="tooltip" class="absolute top-6 left-6 w-[320px] h-[300px] aspect-square border border-white/10 shadow-2xl rounded-2xl hidden overflow-hidden backdrop-blur-2xl">
+            <div id="tooltipBackground" class="absolute inset-0 bg-slate-900/50 bg-cover bg-center"></div>
+            <div class="relative h-full p-6 space-y-4">
+                <div class="absolute top-5 right-5">
+                    <a id="artistlink" href="#" target="_blank" rel="noopener noreferrer" class="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full inline-flex transition-all">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-white/70 hover:text-green-400 cursor-pointer transition-colors">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="m14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+                <div id="infoHeader" class="pr-10">
+                    <div id="artistName" class="text-xl sm:text-2xl md:text-3xl font-inter font-medium tracking-tight text-white truncate drop-shadow-md">Artist</div>
+                    <div id="genres" class="text-xs sm:text-sm font-inter font-light tracking-wide text-white/60 mt-1">Genres:</div>
+                </div>
+                <div class="pt-2 border-t border-white/10">
+                    <div id="topTracksLabel">
+                        <div class="text-sm sm:text-base font-inter font-medium tracking-wide text-white/80">Top Tracks</div>
+                    </div>
+                    <div id="topTracksContainer" class="mt-2 space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</body>
+</html>

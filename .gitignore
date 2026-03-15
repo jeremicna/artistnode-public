@@ -1,0 +1,12 @@
+.elasticbeanstalk
+.ebextensions
+.platform
+data/db
+key/*.p8
+data/t10krecovery
+node_modules
+.venv/
+.env
+TODO.txt
+data/TODO.txt
+.DS_Store
