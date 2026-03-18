@@ -177,7 +177,7 @@ function createArtistleService({ db, config }) {
         };
     }
 
-    async function computeDistance(startId, targetId) {
+    async function computeBreadthFirstDistance(startId, targetId, options = {}) {
         if (!startId || !targetId) {
             return null;
         }
@@ -186,14 +186,20 @@ function createArtistleService({ db, config }) {
             return 0;
         }
 
+        const effectiveMaxDepth = Number.isFinite(options.maxDepth)
+            ? options.maxDepth
+            : Number.POSITIVE_INFINITY;
+        const effectiveMaxVisited = Number.isFinite(options.maxVisited)
+            ? options.maxVisited
+            : Number.POSITIVE_INFINITY;
         const visited = new Set([startId]);
         let frontier = [startId];
         let depth = 0;
 
         while (
             frontier.length > 0
-            && depth < config.maxDepth
-            && visited.size < config.maxVisited
+            && depth < effectiveMaxDepth
+            && visited.size < effectiveMaxVisited
         ) {
             depth += 1;
 
@@ -219,8 +225,20 @@ function createArtistleService({ db, config }) {
         return null;
     }
 
+    async function computeDistance(startId, targetId) {
+        return computeBreadthFirstDistance(startId, targetId, {
+            maxDepth: config.maxDepth,
+            maxVisited: config.maxVisited,
+        });
+    }
+
+    async function computePathLength(startId, targetId) {
+        return computeBreadthFirstDistance(startId, targetId);
+    }
+
     return {
         computeDistance,
+        computePathLength,
         selectTarget,
     };
 }

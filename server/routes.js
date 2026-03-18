@@ -215,10 +215,14 @@ function registerRoutes({
                 return;
             }
 
-            const [rootGenre, targetGenre] = await Promise.all([
+            const [rootGenre, targetGenre, pathLength] = await Promise.all([
                 readArtistGenreOrNull(rootId),
                 readArtistGenreOrNull(targetResult.candidate.id),
+                artistleService.computePathLength(rootId, targetResult.candidate.id),
             ]);
+            const maxGuesses = Number.isFinite(pathLength)
+                ? pathLength + 3
+                : artistleConfig.maxGuesses;
 
             res.json({
                 date: targetResult.date,
@@ -227,7 +231,7 @@ function registerRoutes({
                 targetId: targetResult.candidate.id,
                 targetGenre,
                 targetName: targetResult.candidate.name,
-                maxGuesses: artistleConfig.maxGuesses,
+                maxGuesses,
                 maxDepth: artistleConfig.maxDepth,
             });
         } catch (error) {
