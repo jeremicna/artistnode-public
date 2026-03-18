@@ -1,5 +1,6 @@
 const VIEWPORT_WIDTH_THRESHOLD = 640;
 const VIEWPORT_HEIGHT_THRESHOLD = 1180;
+const HEIGHT_SCALING_MAX_WIDTH = 900;
 const MIN_VIEWPORT_SCALE = 0.5;
 const VIEWPORT_WIDTH_CHANGE_EPSILON = 1;
 
@@ -44,7 +45,9 @@ export function refreshViewportMetricsIfNeeded(options = {}) {
 export function getViewportMetrics(options = {}) {
     const { forceRefresh = false } = options;
     const { width, height } = getStableViewportSize(forceRefresh);
-    const shouldScale = width < VIEWPORT_WIDTH_THRESHOLD || height < VIEWPORT_HEIGHT_THRESHOLD;
+    const shouldScaleForWidth = width < VIEWPORT_WIDTH_THRESHOLD;
+    const shouldScaleForHeight = width < HEIGHT_SCALING_MAX_WIDTH && height < VIEWPORT_HEIGHT_THRESHOLD;
+    const shouldScale = shouldScaleForWidth || shouldScaleForHeight;
     const scale = shouldScale
         ? Math.max(
             MIN_VIEWPORT_SCALE,
