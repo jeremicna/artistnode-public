@@ -7,6 +7,9 @@ data/t10krecovery
 node_modules
 .venv/
 .env
+.dev.vars*
+.wrangler
+.cloudflare-export*
 TODO.txt
 data/TODO.txt
 .DS_Store

@@ -4,8 +4,14 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "test": "node --check src/worker.mjs && node --check scripts/cloudflare-export.js && node --check scripts/upload-r2-artists.js",
+    "start": "node app.js",
+    "cf:dev": "WRANGLER_LOG_PATH=.wrangler/logs wrangler dev",
+    "cf:deploy": "WRANGLER_LOG_PATH=.wrangler/logs wrangler deploy",
+    "cf:d1:create": "WRANGLER_LOG_PATH=.wrangler/logs wrangler d1 create artistnode",
+    "cf:d1:import": "WRANGLER_LOG_PATH=.wrangler/logs wrangler d1 execute artistnode --remote --file .cloudflare-export/d1.sql",
+    "cf:export": "node scripts/cloudflare-export.js",
+    "cf:r2:upload": "node scripts/upload-r2-artists.js"
   },
   "repository": {
     "type": "git",
@@ -25,5 +31,8 @@
     "regl": "^2.1.1",
     "rocksdb": "^5.2.1",
     "tailwindcss": "^4.1.7"
+  },
+  "devDependencies": {
+    "wrangler": "^4.86.0"
   }
 }
