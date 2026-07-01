@@ -1,16 +1,18 @@
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 
 function runDeploymentSetup({ databaseDirectory, s3BucketName }) {
-    if (!process.env.PORT) {
-        console.log('PORT not set, skipping shell commands');
+    if (process.env.SYNC_DATABASE_FROM_S3 !== 'true') {
         return;
     }
 
-    console.log('PORT set, running shell commands...');
+    if (!s3BucketName) {
+        console.error('SYNC_DATABASE_FROM_S3 is true, but S3_BUCKET_NAME is not set');
+        process.exit(1);
+    }
 
     try {
-        createDatabaseDirectory();
+        createDatabaseDirectory(databaseDirectory);
         syncDatabaseFromS3(s3BucketName);
         verifyDatabaseDirectory(databaseDirectory);
         console.log(`Database verified at: ${databaseDirectory}`);
@@ -20,15 +22,15 @@ function runDeploymentSetup({ databaseDirectory, s3BucketName }) {
     }
 }
 
-function createDatabaseDirectory() {
-    console.log('Creating directory...');
-    execSync('mkdir -p ./data/db', { stdio: 'inherit' });
+function createDatabaseDirectory(databaseDirectory) {
+    fs.mkdirSync(databaseDirectory, { recursive: true });
 }
 
 function syncDatabaseFromS3(s3BucketName) {
     console.log('Syncing from S3...');
-    execSync(
-        `aws s3 sync s3://${s3BucketName}/data/db ./data/db --delete`,
+    execFileSync(
+        'aws',
+        ['s3', 'sync', `s3://${s3BucketName}/data/db`, './data/db', '--delete'],
         { stdio: 'inherit' }
     );
     console.log('S3 sync completed successfully');
