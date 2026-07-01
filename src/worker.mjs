@@ -146,7 +146,7 @@ async function handleSearch(env, prefix) {
     const normalizedPrefix = decodeURIComponent(prefix).trim().toLowerCase();
 
     if (!normalizedPrefix) {
-        return jsonResponse({});
+        return jsonResponse([]);
     }
 
     const { results } = await env.DB.prepare(
@@ -162,14 +162,10 @@ async function handleSearch(env, prefix) {
         SEARCH_RESULT_LIMIT
     ).all();
 
-    const response = {};
-
-    for (const row of results || []) {
-        response[row.name_lc] = {
-            id: row.id,
-            name: row.name,
-        };
-    }
+    const response = (results || []).map((row) => ({
+        id: row.id,
+        name: row.name,
+    }));
 
     return jsonResponse(response);
 }

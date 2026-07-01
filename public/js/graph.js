@@ -6,6 +6,7 @@ const IMAGE_SIZE = '512';
 const CLICK_THRESHOLD = 3;
 const SEARCH_RESULT_LIMIT = 5;
 const SEARCH_DEBOUNCE_MS = 300;
+const RELATION_BATCH_SIZE = 25;
 
 const SIMILAR_ARTISTS_VIEW = 'similar-artists';
 const TOP_SONGS_VIEW = 'top-songs';
@@ -92,10 +93,20 @@ async function requestJson(url, { errorPrefix, fetchOptions } = {}) {
     const response = await fetch(url, fetchOptions);
 
     if (!response.ok) {
-        throw new Error(`${errorPrefix} failed with status ${response.status}`);
+        throw new Error(`${errorPrefix || 'Request'} failed with status ${response.status}`);
     }
 
     return await response.json();
+}
+
+function toChunks(items, size) {
+    const chunks = [];
+
+    for (let index = 0; index < items.length; index += size) {
+        chunks.push(items.slice(index, index + size));
+    }
+
+    return chunks;
 }
 
 export class ArtistNetworkGraph {
@@ -140,42 +151,38 @@ export class ArtistNetworkGraph {
     async init(rootArtistId, options = {}) {
         const { autoExpandRoot = false } = options;
 
-        try {
-            this._clearGraph();
+        this._clearGraph();
 
-            const rootRelationData = await this._fetchRelationData(rootArtistId);
-            this.relationData = { [rootArtistId]: rootRelationData };
-            const rootArtist = getPrimaryArtist(rootRelationData);
+        const rootRelationData = await this._fetchRelationData(rootArtistId);
+        this.relationData = { [rootArtistId]: rootRelationData };
+        const rootArtist = getPrimaryArtist(rootRelationData);
 
-            if (!rootArtist) {
-                throw new Error('Root artist data is missing.');
+        if (!rootArtist) {
+            throw new Error('Root artist data is missing.');
+        }
+
+        const rootNode = this.addNode(
+            rootArtist.id,
+            rootArtist.attributes.name,
+            rootArtist.attributes.artwork.url
+        );
+
+        const relatedArtists = getSimilarArtists(rootRelationData);
+        const relatedIds = relatedArtists.map((artist) => artist.id);
+
+        await this._loadRelationDataForIds(relatedIds);
+        this._renderGraph();
+
+        if (autoExpandRoot && rootNode) {
+            rootNode.expanded = true;
+
+            const added = await this.extendGraph(rootArtist.id);
+
+            if (added) {
+                this._updateVisualization();
+            } else {
+                rootNode.expanded = false;
             }
-
-            const rootNode = this.addNode(
-                rootArtist.id,
-                rootArtist.attributes.name,
-                rootArtist.attributes.artwork.url
-            );
-
-            const relatedArtists = getSimilarArtists(rootRelationData);
-            const relatedIds = relatedArtists.map((artist) => artist.id);
-
-            await this._loadRelationDataForIds(relatedIds);
-            this._renderGraph();
-
-            if (autoExpandRoot && rootNode) {
-                rootNode.expanded = true;
-
-                const added = await this.extendGraph(rootArtist.id);
-
-                if (added) {
-                    this._updateVisualization();
-                } else {
-                    rootNode.expanded = false;
-                }
-            }
-        } catch (error) {
-            console.error('Error initializing graph:', error);
         }
     }
 
@@ -410,8 +417,8 @@ export class ArtistNetworkGraph {
         tooltipElements.tooltip.classList.remove('hidden');
         tooltipElements.tooltipBackground.style.backgroundImage = `linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.25)), url('${resolveArtworkUrl(node.imageURL)}')`;
         tooltipElements.artistLink.href = artistData.attributes.url;
-        tooltipElements.artistNameLabel.innerHTML = artistData.attributes.name;
-        tooltipElements.genresLabel.innerHTML = `Genres: ${artistData.attributes.genreNames.join(', ')}`;
+        tooltipElements.artistNameLabel.textContent = artistData.attributes.name;
+        tooltipElements.genresLabel.textContent = `Genres: ${(artistData.attributes.genreNames || []).join(', ')}`;
         tooltipElements.topTracksContainer.innerHTML = '';
 
         this._resetAudioState();
@@ -500,30 +507,20 @@ export class ArtistNetworkGraph {
     }
 
     async _fetchRelationData(artistId) {
-        try {
-            return await requestJson(`/api/relationdata/${artistId}`, {
-                errorPrefix: 'Retrieving relation data',
-            });
-        } catch (error) {
-            console.error('Failed to fetch relation data:', error);
-            return {};
-        }
+        return await requestJson(`/api/relationdata/${encodeURIComponent(artistId)}`, {
+            errorPrefix: 'Retrieving relation data',
+        });
     }
 
     async _fetchRelationDataBatch(ids) {
-        try {
-            return await requestJson('/api/relationdata/batch', {
-                errorPrefix: 'Batch relation data fetch',
-                fetchOptions: {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ids }),
-                },
-            });
-        } catch (error) {
-            console.error('Failed to fetch batch relation data:', error);
-            return {};
-        }
+        return await requestJson('/api/relationdata/batch', {
+            errorPrefix: 'Batch relation data fetch',
+            fetchOptions: {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids }),
+            },
+        });
     }
 
     async _loadRelationDataForIds(ids) {
@@ -531,11 +528,15 @@ export class ArtistNetworkGraph {
             return;
         }
 
-        const batchData = await this._fetchRelationDataBatch(ids);
+        const batches = toChunks(ids, RELATION_BATCH_SIZE);
 
-        for (const [id, data] of Object.entries(batchData)) {
-            if (hasUsableRelationData(data)) {
-                this.relationData[id] = data;
+        for (const batch of batches) {
+            const batchData = await this._fetchRelationDataBatch(batch);
+
+            for (const [id, data] of Object.entries(batchData)) {
+                if (hasUsableRelationData(data)) {
+                    this.relationData[id] = data;
+                }
             }
         }
     }
@@ -580,17 +581,19 @@ export class ArtistNetworkGraph {
     }
 
     _createTrackRow(track) {
-        const previewUrl = track.attributes.previews[0].url || '#';
+        const previewUrl = track.attributes.previews?.[0]?.url || null;
         const trackWrapper = document.createElement('div');
         const nameElement = document.createElement('div');
-        const playButton = this._createTrackPlayButton(previewUrl);
 
         trackWrapper.className = 'flex items-center space-x-2';
 
-        nameElement.textContent = track.attributes.name;
+        nameElement.textContent = track.attributes.name || 'Untitled track';
         nameElement.className = 'text-xs sm:text-sm font-inter font-light tracking-tight text-neutral-50 truncate max-w-50';
 
-        trackWrapper.appendChild(playButton);
+        if (previewUrl) {
+            trackWrapper.appendChild(this._createTrackPlayButton(previewUrl));
+        }
+
         trackWrapper.appendChild(nameElement);
 
         return trackWrapper;
@@ -609,6 +612,10 @@ export class ArtistNetworkGraph {
     }
 
     _toggleTrackPreview(previewUrl, playButton) {
+        if (!previewUrl) {
+            return;
+        }
+
         if (this.currentAudio && this.currentAudio.src !== previewUrl) {
             this.currentAudio.pause();
             setPlayButtonIcon(this.currentPlayButton);
@@ -755,7 +762,13 @@ export class ArtistNetworkGraph {
         node.expanded = true;
         this.simulation.stop();
 
-        const added = await this.extendGraph(node.id);
+        let added = false;
+
+        try {
+            added = await this.extendGraph(node.id);
+        } catch (error) {
+            console.error('Failed to expand artist node:', error);
+        }
 
         if (added) {
             this._updateVisualization();
@@ -768,6 +781,7 @@ export class ArtistNetworkGraph {
         }
 
         node.expanded = false;
+        this.simulation.alpha(0.1).restart();
     }
 
     _getLinkNodeIds(link) {
@@ -889,12 +903,12 @@ export class ArtistNetworkGraph {
 
 export async function fetchSearchResults(prefix) {
     try {
-        return await requestJson(`/api/search/${prefix}`, {
+        return await requestJson(`/api/search/${encodeURIComponent(prefix)}`, {
             errorPrefix: 'Retrieving search results',
         });
     } catch (error) {
         console.error('Failed to fetch search results:', error);
-        return {};
+        return [];
     }
 }
 
@@ -947,7 +961,7 @@ export async function displayArtistResults({
     }
 
     const results = await fetchSearchResults(query);
-    const entries = Object.values(results).filter(Boolean).slice(0, limit);
+    const entries = results.filter(Boolean).slice(0, limit);
 
     if (entries.length === 0) {
         hideResults(resultsEl);
@@ -1014,6 +1028,9 @@ export function setupSearchListeners({
                         }
                     },
                 });
+            } catch (error) {
+                console.error('Failed to display search results:', error);
+                hideResults(resultsContainer);
             } finally {
                 searchInput.classList.remove('animate-pulse');
             }

@@ -93,11 +93,9 @@ function registerRoutes({
 
     function parseSearchResultEntry(key, value) {
         const keyString = String(key);
-        const firstColon = keyString.indexOf(':');
         const lastColon = keyString.lastIndexOf(':');
 
         return {
-            name: keyString.slice(firstColon + 1, lastColon),
             index: Number(keyString.slice(lastColon + 1)),
             artistInfo: parseJsonBuffer(value),
         };
@@ -105,14 +103,7 @@ function registerRoutes({
 
     function createSearchResultsObject(heap) {
         heap.sort((a, b) => a.index - b.index);
-
-        const results = {};
-
-        for (const item of heap) {
-            results[item.name] = item.artistInfo;
-        }
-
-        return results;
+        return heap.map((item) => item.artistInfo);
     }
 
     function searchArtists(prefix) {

@@ -19,10 +19,14 @@ function revealContainer(container) {
     container.classList.remove('opacity-0', 'translate-y-8');
 }
 
-function handleArtistSelection(entry, graph, overlay) {
-    graph.init(entry.id);
-    overlay.classList.add('hidden');
-    history.pushState({}, '', '/graph');
+async function handleArtistSelection(entry, graph, overlay) {
+    try {
+        await graph.init(entry.id);
+        overlay.classList.add('hidden');
+        history.pushState({}, '', '/graph');
+    } catch (error) {
+        console.error('Unable to load artist graph:', error);
+    }
 }
 
 async function initializePage() {
@@ -37,7 +41,9 @@ async function initializePage() {
         searchInput: elements.searchInput,
         resultsContainer: elements.searchResults,
         enterButton: elements.searchEnter,
-        onSelect: (entry) => handleArtistSelection(entry, graph, elements.overlay),
+        onSelect: (entry) => {
+            handleArtistSelection(entry, graph, elements.overlay);
+        },
     });
 
     setupPopStateHandler(elements.overlay);
