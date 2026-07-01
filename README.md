@@ -1,6 +1,6 @@
 # artistnode
 
-`artistnode` is a small Node.js app for exploring artist relationship data and powering the Artistle game/API.
+`artistnode` is a small web app for exploring artist relationship data.
 
 This public mirror repo is mainly an archive of the app code and front-end experience.
 
@@ -9,3 +9,5 @@ The crawler + data-generation pipeline and deployment bootstrapping are intentio
 As a result, this repository should be viewed as a public archive of the serving layer rather than the full system.
 
 ## Demo
+
+[artistnode.fun](https://artistnode.fun)

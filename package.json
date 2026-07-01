@@ -1,10 +1,11 @@
 {
-  "name": "spotify-data-visualization",
+  "name": "artistnode",
   "version": "1.0.0",
-  "description": "",
+  "description": "Artist relationship explorer and daily Artistle game.",
   "main": "app.js",
   "scripts": {
-    "test": "node --check src/worker.mjs && node --check scripts/cloudflare-export.js && node --check scripts/upload-r2-artists.js",
+    "test": "node --check src/worker.mjs && node --check public/js/graph.js && node --check public/js/index.js && node --check public/js/artistle.js && node --check server/routes.js && node --check server/deployment.js",
+    "test:private": "node --check scripts/cloudflare-export.js && node --check scripts/upload-r2-artists.js",
     "start": "node app.js",
     "cf:dev": "WRANGLER_LOG_PATH=.wrangler/logs wrangler dev",
     "cf:deploy": "WRANGLER_LOG_PATH=.wrangler/logs wrangler deploy",
@@ -15,14 +16,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jeremicna/Spotify-Data-Visualization.git"
+    "url": "git+https://github.com/jeremicna/artistnode.git"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jeremicna/Spotify-Data-Visualization/issues"
+    "url": "https://github.com/jeremicna/artistnode/issues"
   },
-  "homepage": "https://github.com/jeremicna/Spotify-Data-Visualization#readme",
+  "homepage": "https://github.com/jeremicna/artistnode#readme",
   "dependencies": {
     "@tailwindcss/cli": "^4.1.7",
     "dotenv": "^17.2.3",
